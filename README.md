@@ -41,13 +41,12 @@ Without `RESEND_API_KEY`, emails are only logged to the server console (handy in
 ## Deploy
 Any Node host works (Vercel, Railway, Render, a VPS). Postgres options: Neon, Supabase, RDS, Railway.
 
-```bash
-npm run build                 # the homepage is pre-rendered, so DATABASE_URL must be reachable at build time
-npm run db:deploy             # apply migrations in production
-npm run start
-```
+**Render (or any host):**
+- Build command: `npm install && npm run build:deploy`. This applies migrations, seeds the database (safe to repeat: sample data is only added to an empty database) and runs `next build`.
+- Start command: `npm run start`
+- Environment variables: `DATABASE_URL`, `AUTH_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `RESEND_API_KEY`, `EMAIL_FROM`, `NEXT_PUBLIC_SITE_URL`
 
-The homepage revalidates every 60 s, and immediately whenever an admin saves a change.
+Pages render on each request, so admin changes show up immediately.
 
 ## Project layout
 ```

@@ -126,13 +126,17 @@ const universities: Seed[] = [
 ];
 
 async function main() {
-  for (const [i, p] of programs.entries()) {
+  // Safe to run on every deploy: sample catalog is only inserted into an empty database,
+  // so programs/universities the admin deleted are never re-created.
+  const fresh = (await prisma.program.count()) === 0 && (await prisma.university.count()) === 0;
+  if (!fresh) console.log("Catalog already present, skipping sample programs/universities.");
+  for (const [i, p] of fresh ? programs.entries() : []) {
     await prisma.program.upsert({ where: { slug: p.slug }, update: {}, create: { ...p, sortOrder: i } });
   }
   const programRows = await prisma.program.findMany();
   const bySlug = Object.fromEntries(programRows.map((p) => [p.slug, p.id]));
 
-  for (const u of universities) {
+  for (const u of fresh ? universities : []) {
     const { programs: progSlugs, ...data } = u;
     const exists = await prisma.university.findUnique({ where: { slug: u.slug } });
     if (exists) continue;

@@ -6,8 +6,8 @@ import { Explorer } from "@/components/site/explorer";
 import { Modals } from "@/components/site/modals";
 import { CompareTray, Footer, Toast, WhatsAppFab, WhyChoose } from "@/components/site/sections";
 
-// Re-render at most every 60s; admin changes also trigger revalidatePath("/").
-export const revalidate = 60;
+// Rendered per request so the build never needs the database, and admin edits show instantly.
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const [universities, programs, s] = await Promise.all([getPublicUniversities(), getPublicPrograms(), getSiteSettings()]);

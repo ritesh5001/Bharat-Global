@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bharat Global Education
 
-## Getting Started
+University comparison portal + admin panel. A single Next.js 15 monolith (App Router, TypeScript) with PostgreSQL (Prisma) and Resend for email.
 
-First, run the development server:
+## What's inside
+
+**Public site** (`/`)
+- Program filter chips, search, fee-budget filter, sort, reset
+- University cards → Compare / Fee Details / Apply Now
+- Sticky compare tray (max 3) → side-by-side comparison matrix
+- "Find your best university in 30 seconds" quiz
+- Lead forms (Free Counseling, Brochure, Apply, Talk to an Expert) → saved to Postgres + emailed via Resend
+- WhatsApp button, footer driven by admin settings
+
+**Admin panel** (`/admin`, login required)
+- Dashboard: counts, recent leads, leads by source
+- Universities: add / edit / hide / delete, fees, badges, programs, highlights
+- Programs: the filter chips (name, icon, duration, order)
+- Leads: search, filter by status, update status + notes, CSV export
+- Settings: helpline phone/email/WhatsApp/address, lead-notification inbox, change password, add admin users
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env          # fill in DATABASE_URL, ADMIN_*, AUTH_SECRET, RESEND_*
+npm install
+npm run db:migrate            # creates tables
+npm run db:seed               # 7 programs, 10 universities, site settings, first admin user
+npm run dev                   # http://localhost:3000  ·  admin: http://localhost:3000/admin
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`AUTH_SECRET`: any random string of 32+ characters (`openssl rand -hex 32`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Email (Resend)
+1. Create an API key at resend.com, put it in `RESEND_API_KEY`.
+2. Verify your domain in Resend and set `EMAIL_FROM`, e.g. `Bharat Global Education <admissions@yourdomain.in>`.
+3. Set the "Send new-lead emails to" inbox in **Admin → Settings**.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Without `RESEND_API_KEY`, emails are only logged to the server console (handy in development). Each lead triggers an admin alert and, if the student gave an email, a confirmation to the student. A failed email never blocks the lead from being saved.
 
-## Learn More
+## Deploy
+Any Node host works (Vercel, Railway, Render, a VPS). Postgres options: Neon, Supabase, RDS, Railway.
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build                 # the homepage is pre-rendered, so DATABASE_URL must be reachable at build time
+npm run db:deploy             # apply migrations in production
+npm run start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The homepage revalidates every 60 s, and immediately whenever an admin saves a change.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project layout
+```
+prisma/            schema.prisma, migrations, seed.ts
+src/app/(site)/    public homepage
+src/app/actions/   submitLead server action (validation, rate limit, DB, email)
+src/app/admin/     login, panel pages, admin server actions, CSV export route
+src/components/    site/ (public UI) and admin/ (panel UI)
+src/lib/           db, auth (JWT cookie), email (Resend), validation (zod), data loaders
+src/middleware.ts  protects /admin/*
+```

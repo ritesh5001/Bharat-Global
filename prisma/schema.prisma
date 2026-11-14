@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Program category shown as filter chips (Online MBA, Online MCA, ...)
+model Program {
+  id           String              @id @default(cuid())
+  name         String              @unique
+  slug         String              @unique
+  icon         String              @default("GraduationCap")
+  duration     String              @default("2 Years")
+  sortOrder    Int                 @default(0)
+  active       Boolean             @default(true)
+  universities UniversityProgram[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+}
+
+model University {
+  id                String              @id @default(cuid())
+  slug              String              @unique
+  name              String
+  shortName         String
+  initials          String
+  logoColor         String              @default("#0b2a5b")
+  logoUrl           String?
+  city              String
+  state             String
+  ugcDeb            Boolean             @default(true)
+  naacGrade         String?
+  nirfRank          String?
+  wesAccredited     Boolean             @default(false)
+  featuredProgram   String
+  duration          String
+  courseTags        String[]
+  totalFee          Int
+  semesterFee       Int
+  emiPerMonth       Int
+  examMode          String              @default("Online Proctored (From Home)")
+  specializations   String
+  hiringPartners    String
+  highlights        String[]
+  brochureUrl       String?
+  applyUrl          String?
+  popularity        Int                 @default(0)
+  active            Boolean             @default(true)
+  programs          UniversityProgram[]
+  leads             Lead[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model UniversityProgram {
+  universityId String
+  programId    String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  program      Program    @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@id([universityId, programId])
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  INTERESTED
+  ENROLLED
+  CLOSED
+}
+
+model Lead {
+  id            String      @id @default(cuid())
+  name          String
+  phone         String
+  email         String?
+  qualification String?
+  course        String?
+  location      String?
+  source        String
+  notes         String?
+  status        LeadStatus  @default(NEW)
+  universityId  String?
+  university    University? @relation(fields: [universityId], references: [id], onDelete: SetNull)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([createdAt])
+  @@index([status])
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+/// Single-row site settings editable from admin
+model SiteSetting {
+  id             String @id @default("site")
+  phone          String @default("+91 98765-43210")
+  whatsapp       String @default("919876543210")
+  email          String @default("admissions@bharatglobaleducation.in")
+  address        String @default("Sector 62, Noida / Delhi NCR, India")
+  helplineHours  String @default("Mon–Sun, 9 AM – 8 PM")
+  leadNotifyTo   String @default("admissions@bharatglobaleducation.in")
+}
